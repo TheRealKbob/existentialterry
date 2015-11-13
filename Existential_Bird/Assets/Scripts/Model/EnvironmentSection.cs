@@ -8,6 +8,10 @@ public class EnvironmentSection : MonoBehaviour {
 
 	public bool Active
 	{
+		get
+		{
+			return gameObject.active;
+		}
 		set
 		{
 			gameObject.SetActive( value );

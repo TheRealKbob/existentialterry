@@ -65,11 +65,17 @@ public class EnvironmentController : MonoBehaviour, IEnvironmentController
 			sections.Add(fsec);
 			fsec.transform.localPosition = new Vector3(lsec.x + sectionWidth, fsecPos.y, fsecPos.z );
 
-			int hidePct = Random.Range( 0, 100 );
+			int hideTens = Random.Range( 0, 10 );
+			int hideHuns = Random.Range( 0, 10 ) * 10;
+
+			int hidePct = hideTens + hideHuns;
 			if(PercentToHide > 0)
-				fsec.Active = !(hidePct < PercentToHide );
-			else
-				fsec.Active = true;
+			{
+				if(hidePct < PercentToHide)
+					fsec.Active = false;
+				else
+					fsec.Active = true;
+			}
 		}
 	}
 
