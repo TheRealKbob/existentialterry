@@ -1,9 +1,30 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent (typeof (SpriteRenderer))]
 public class EnvironmentSection : MonoBehaviour {
 
 	public SpriteRenderer renderer{ get; private set; }
+
+	public bool Active
+	{
+		set
+		{
+			gameObject.SetActive( value );
+		}
+	}
+
+	public int OrderInLayer
+	{ 
+		get
+		{
+			return renderer.sortingOrder;
+		}
+		set
+		{
+			renderer.sortingOrder = value;
+		}
+	}
 
 	// Use this for initialization
 	void Awake () {

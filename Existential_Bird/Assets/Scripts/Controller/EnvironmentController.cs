@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,106 +8,101 @@ public class EnvironmentController : MonoBehaviour, IEnvironmentController
 
 	private Environment environment;
 
-	[Serializable]
-	public struct GroundMapObject
-	{
-		public EnvironmentType Type;
-		public Sprite Image;
-	}
-
 	public EnvironmentType CurrentType;
 
-	public float Y_Offset = 0;
+	private float tolerance = 0.998f;
+	private List<EnvironmentSection> sections;
+
+	private float sectionWidth;
+	private float sectionHeight;
+	private float cameraToWorldWidth;
 
 	public List<Environment.MapObject> GroundSprites = new List<Environment.MapObject>();
-	public Dictionary<EnvironmentType, Sprite> groundLookup = new Dictionary<EnvironmentType, Sprite>();
-
-	private List<EnvironmentSection> sections = new List<EnvironmentSection>();
+	public Dictionary<EnvironmentType, Sprite> spriteMap = new Dictionary<EnvironmentType, Sprite>();
 
 	public EnvironmentSection GroundSectionPrefab;
-
+ 
 	public float Speed = 10;
 
-	private float tolerance = 0.998f;
+	public int OrderInLayer = 0;
+
+	public int PercentToHide = 0;
+	public bool StartInactive = false;
 
 	void Start()
 	{
 		environment = GameObject.FindObjectOfType<Environment>();
+		CurrentType = EnvironmentType.SPRING;
 
-		transform.position = environment.transform.position;
+		Camera cam = Camera.main;
+		Vector3 cameraLeft = cam.ScreenToWorldPoint( new Vector3( 0, 0, cam.nearClipPlane ) );
+		Vector3 cameraRight = cam.ScreenToWorldPoint( new Vector3( Screen.width, 0, cam.nearClipPlane ) );
+		cameraToWorldWidth = Mathf.Abs( (cameraRight - cameraLeft).x );
 
-		sections = gameObject.GetComponentsInChildren<EnvironmentSection>().ToList();
-		
-		initializeGroundTypeLookup();
-		
-		normalizeGroundPositions();
-		
-		ChangeAllSprites( EnvironmentType.SPRING );
+		transform.position = new Vector3( cameraLeft.x, transform.position.y, transform.position.z );
+		initializeSpriteMap();
+		initializeSections();
 	}
 
-	public void Move () {
-		
-		for( int i = 0; i < sections.Count; i++ )
+	public void Move ()
+	{
+		foreach( EnvironmentSection sec in sections )
 		{
-			Vector3 p = sections[i].transform.position;
-			Vector3 newPos = new Vector3( -Speed, 0, 0 );
-			sections[i].transform.position += newPos * Time.deltaTime;
+			Vector3 pos = new Vector3( Speed, 0, 0 );
+			sec.transform.localPosition -= pos * Time.deltaTime;
 		}
+		firstSectionToLast();
+	}
 
-		Vector3 epos = environment.transform.position;
-		float swidth = sections[0].renderer.sprite.bounds.size.x;
-
-		if( sections[0].transform.position.x < (environment.transform.position.x - swidth) )
+	private void firstSectionToLast()
+	{
+		EnvironmentSection fsec = sections[0];
+		Vector3 fsecPos = sections[0].transform.localPosition;
+		Vector3 lsec = sections[ sections.Count - 1 ].transform.localPosition;
+		if( fsecPos.x < -sectionWidth )
 		{
-			EnvironmentSection first = sections[0];
-			if( first.GetSprite() != groundLookup[ CurrentType ] )
-			{
-				first.ChangeSprite( groundLookup[ CurrentType ] );
-			}
 			sections.RemoveAt(0);
-			sections.Add( first );
-			repositionSections();
-		}
-		
-	}
+			sections.Add(fsec);
+			fsec.transform.localPosition = new Vector3(lsec.x + sectionWidth, fsecPos.y, fsecPos.z );
 
-	private void initializeGroundTypeLookup()
-	{
-		foreach( Environment.MapObject gmo in GroundSprites )
-		{
-			groundLookup.Add( gmo.Type, gmo.Image );
+			int hidePct = Random.Range( 0, 100 );
+			if(PercentToHide > 0)
+				fsec.Active = !(hidePct < PercentToHide );
+			else
+				fsec.Active = true;
 		}
 	}
 
-	public void ChangeAllSprites ( EnvironmentType type )
+	private void initializeSpriteMap()
 	{
-		CurrentType = type;
-		foreach( EnvironmentSection gs in sections )
+		foreach( Environment.MapObject map in GroundSprites )
 		{
-			gs.ChangeSprite( groundLookup[ type ] );
+			spriteMap.Add(map.Type, map.Image);
 		}
+		sectionWidth = spriteMap[CurrentType].bounds.size.x;
+		sectionHeight = spriteMap[CurrentType].bounds.size.y;
 	}
 
-	private void normalizeGroundPositions()
+	private void initializeSections()
 	{
-		float swidth = sections[0].renderer.sprite.bounds.size.x;
-		for( int i = 0; i < sections.Count; i++ )
+		sections = new List<EnvironmentSection>();
+		int i = 0;
+		while( (sections.Count * sectionWidth) < (cameraToWorldWidth + (sectionWidth * 2)) )
 		{
-			sections[i].transform.position = environment.transform.position + new Vector3( swidth * i , Y_Offset, 0 );
+			GameObject go = new GameObject();
+
+			Vector3 pos = new Vector3( (i * sectionWidth), go.transform.position.y, go.transform.position.z );
+			go.transform.parent = transform;
+			go.transform.localPosition = pos;
+
+			EnvironmentSection sec = go.AddComponent<EnvironmentSection>() as EnvironmentSection;
+			sec.OrderInLayer = OrderInLayer;
+			sec.ChangeSprite( spriteMap[CurrentType] );
+			sections.Add( sec );
+			if(StartInactive) sec.Active = false;
+			i++;
 		}
-	}
-	
-	private void repositionSections ()
-	{
-		EnvironmentSection last = sections[ sections.Count - 1 ];
-		EnvironmentSection first = sections[0];
-		
-		Vector3 fpos = first.transform.position;
-		Vector3 lpos = new Vector3( (fpos.x + ( (sections.Count - 1) * first.renderer.sprite.bounds.size.x)) * tolerance, fpos.y, fpos.z );
-		
-		last.transform.position = lpos;
-		
-	}
+	}	
 
 }
 
