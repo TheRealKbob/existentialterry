@@ -9,8 +9,7 @@ public class EnvironmentController : MonoBehaviour, IEnvironmentController
 	private Environment environment;
 
 	public EnvironmentType CurrentType;
-
-	private float tolerance = 0.998f;
+	
 	private List<EnvironmentSection> sections;
 
 	private float sectionWidth;
