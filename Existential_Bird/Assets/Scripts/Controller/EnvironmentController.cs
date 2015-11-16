@@ -9,7 +9,7 @@ public class EnvironmentController : MonoBehaviour, IEnvironmentController
 	private Environment environment;
 
 	public EnvironmentType CurrentType;
-	
+
 	private List<EnvironmentSection> sections;
 
 	private float sectionWidth;
@@ -22,6 +22,8 @@ public class EnvironmentController : MonoBehaviour, IEnvironmentController
 	public EnvironmentSection GroundSectionPrefab;
  
 	public float Speed = 10;
+
+	public bool IsGround = false;
 
 	public int OrderInLayer = 0;
 
@@ -103,8 +105,9 @@ public class EnvironmentController : MonoBehaviour, IEnvironmentController
 			EnvironmentSection sec = go.AddComponent<EnvironmentSection>() as EnvironmentSection;
 			sec.OrderInLayer = OrderInLayer;
 			sec.ChangeSprite( spriteMap[CurrentType] );
+			if( IsGround ) sec.SetAsGround();
 			sections.Add( sec );
-			if(StartInactive) sec.Active = false;
+			if( StartInactive ) sec.Active = false;
 			i++;
 		}
 	}	

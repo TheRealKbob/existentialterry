@@ -31,7 +31,8 @@ public class EnvironmentSection : MonoBehaviour {
 	}
 
 	// Use this for initialization
-	void Awake () {
+	void Awake() 
+	{
 		renderer = gameObject.GetComponent<SpriteRenderer>();
 	}
 	
@@ -44,4 +45,13 @@ public class EnvironmentSection : MonoBehaviour {
 	{
 		return renderer.sprite;
 	}
+
+	public void SetAsGround()
+	{
+		BoxCollider2D bc = gameObject.AddComponent<BoxCollider2D>();
+		bc.size = renderer.bounds.size;
+		gameObject.layer = LayerMask.NameToLayer( "Ground" );
+
+	}
+
 }
